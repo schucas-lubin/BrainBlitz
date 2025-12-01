@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import Link from 'next/link';
+import MathpixUploader from '@/components/MathpixUploader';
 
 export default function NewSessionPage() {
   const router = useRouter();
@@ -70,10 +71,18 @@ export default function NewSessionPage() {
           </form>
 
           <div className="mt-6 pt-6 border-t border-gray-200">
-            <p className="text-sm text-gray-600 mb-2">Or upload a document:</p>
-            <p className="text-xs text-gray-500">
-              TODO: Integrate MathpixUploader component here
-            </p>
+            <p className="text-sm text-gray-600 mb-4">Or upload a document:</p>
+            <MathpixUploader
+              onUploadComplete={(rawMmd) => {
+                // TODO: Save rawMmd to session in Supabase
+                console.log('MMD extracted:', rawMmd.substring(0, 100) + '...');
+                // For now, just show a success message
+                alert('Content extracted! (Check console for MMD preview)');
+              }}
+              onError={(error) => {
+                console.error('Upload error:', error);
+              }}
+            />
           </div>
         </div>
       </div>
