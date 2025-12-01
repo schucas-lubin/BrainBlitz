@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import WordGame from '@/components/WordGame';
 
 // TODO: Replace with real Supabase queries
 interface Session {
@@ -94,10 +95,16 @@ export default function SessionDetailPage({
 
           {activeTab === 'games' && (
             <div>
-              <h2 className="text-2xl font-semibold mb-4">Games</h2>
-              <p className="text-gray-600">
-                TODO: Implement Wordle-style vocab game component.
-              </p>
+              <h2 className="text-2xl font-semibold mb-4">Wordle-Style Vocab Game</h2>
+              {/* TODO: Replace with real game entries from Supabase, filtered by concept */}
+              <WordGame
+                word="acidity"
+                clue="The amount of hydronium ions in solution tells you the: ___"
+                onComplete={(success, guesses) => {
+                  console.log(`Game completed: ${success ? 'success' : 'failure'} in ${guesses} guesses`);
+                  // TODO: Update concept mastery based on game result
+                }}
+              />
             </div>
           )}
         </div>
