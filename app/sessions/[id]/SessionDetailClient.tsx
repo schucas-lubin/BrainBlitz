@@ -2,14 +2,16 @@
 
 import { useState } from 'react';
 import WordGame from '@/components/WordGame';
+import { MmdRenderer } from '@/components/MmdRenderer';
 
 type Tab = 'learn' | 'quiz' | 'games';
 
 interface SessionDetailClientProps {
   sessionId: string;
+  rawMmd: string | null;
 }
 
-export default function SessionDetailClient({ sessionId }: SessionDetailClientProps) {
+export default function SessionDetailClient({ sessionId, rawMmd }: SessionDetailClientProps) {
   const [activeTab, setActiveTab] = useState<Tab>('learn');
 
   const tabs: { id: Tab; label: string }[] = [
@@ -42,12 +44,21 @@ export default function SessionDetailClient({ sessionId }: SessionDetailClientPr
       {/* Tab Content */}
       <div className="bg-white rounded-lg shadow p-6">
         {activeTab === 'learn' && (
-          <div>
+          <div className="space-y-4">
             <h2 className="text-2xl font-semibold mb-4">Learning Mode</h2>
-            <p className="text-gray-600">
-              TODO: Implement nested expandable tree for Topics → Subtopics → Concepts
-              with generated notes, user notes, and special resources.
-            </p>
+            {rawMmd && rawMmd.trim().length > 0 ? (
+              <MmdRenderer content={rawMmd} />
+            ) : (
+              <p className="text-sm text-gray-500">
+                No extracted content yet.
+              </p>
+            )}
+            <div className="mt-8 pt-6 border-t border-gray-200">
+              <p className="text-sm text-gray-600">
+                TODO: Implement nested expandable tree for Topics → Subtopics → Concepts
+                with generated notes, user notes, and special resources.
+              </p>
+            </div>
           </div>
         )}
 

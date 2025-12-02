@@ -7,12 +7,13 @@ type Session = {
   id: string;
   title: string;
   subject: string | null;
+  raw_mmd: string | null;
 };
 
 async function getSession(id: string): Promise<Session | null> {
   const { data, error } = await supabase
     .from('sessions')
-    .select('id, title, subject')
+    .select('id, title, subject, raw_mmd')
     .eq('id', id)
     .is('deleted_at', null)
     .single();
@@ -54,7 +55,7 @@ export default async function SessionDetailPage({
         </div>
       </div>
 
-      <SessionDetailClient sessionId={session.id} />
+      <SessionDetailClient sessionId={session.id} rawMmd={session.raw_mmd} />
     </main>
   );
 }
