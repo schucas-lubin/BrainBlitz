@@ -1,34 +1,39 @@
-'use client';
-
 import Link from 'next/link';
-import { useState } from 'react';
+import { supabase } from '@/lib/supabaseClient';
 
-// TODO: Replace with real Supabase queries
-interface Session {
+type Session = {
   id: string;
   title: string;
-  subject?: string;
+  subject: string | null;
   created_at: string;
+};
+
+async function getSessions(): Promise<Session[]> {
+  const { data, error } = await supabase
+    .from('sessions')
+    .select('id, title, subject, created_at')
+    .is('deleted_at', null)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching sessions:', error);
+    return [];
+  }
+
+  return (data as Session[]) || [];
 }
 
-// Mock data - will be replaced with Supabase queries
-const mockSessions: Session[] = [
-  {
-    id: '1',
-    title: 'Chemistry Basics',
-    subject: 'Chemistry',
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    title: 'Calculus Derivatives',
-    subject: 'Math',
-    created_at: new Date().toISOString(),
-  },
-];
+function formatDate(dateString: string): string {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+}
 
-export default function Home() {
-  const [sessions] = useState<Session[]>(mockSessions);
+export default async function Home() {
+  const sessions = await getSessions();
 
   return (
     <main className="min-h-screen p-8 bg-gray-50">
@@ -45,7 +50,7 @@ export default function Home() {
 
         {sessions.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-lg shadow">
-            <p className="text-gray-600 mb-4">No sessions yet</p>
+            <p className="text-gray-600 mb-4">No sessions yet. Create one to get started.</p>
             <Link
               href="/sessions/new"
               className="text-blue-600 hover:text-blue-700 underline"
@@ -73,7 +78,7 @@ export default function Home() {
                     )}
                   </div>
                   <span className="text-sm text-gray-500">
-                    {new Date(session.created_at).toLocaleDateString()}
+                    {formatDate(session.created_at)}
                   </span>
                 </div>
               </Link>

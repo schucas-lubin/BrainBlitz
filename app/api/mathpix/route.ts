@@ -40,42 +40,12 @@ export async function POST(request: NextRequest) {
     // Mock response - simulate processing delay
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    // Return mock MMD content
-    const mockMmd = `# Mock Session Content
+    // Return simple mock MMD content
+    const mockMmd = `# Mock Session
 
-This is a **mock Mathpix Markdown** response for development purposes.
+This is extracted content from Mathpix (mock).
 
-## Extracted Content
-
-The uploaded file "${file.name}" (${file.type}, ${(file.size / 1024).toFixed(2)} KB) would normally be processed by Mathpix to extract:
-
-- Text content
-- Mathematical equations (LaTeX)
-- Tables
-- Figures
-- Chemistry diagrams (SMILES)
-
-## Next Steps
-
-Once the real Mathpix API is integrated:
-
-1. This route will call \`https://api.mathpix.com/v3/text\`
-2. Use \`MATHPIX_APP_ID\` and \`MATHPIX_APP_KEY\` environment variables
-3. Return the actual extracted MMD content
-4. Store the MMD in the session's \`raw_mmd\` field in Supabase
-
-## Example Equation
-
-Here's an example of what a real equation might look like in MMD:
-
-$$E = mc^2$$
-
-And a table:
-
-| Column 1 | Column 2 |
-|----------|----------|
-| Value 1  | Value 2  |
-`;
+The uploaded file "${file.name}" has been processed and converted to Mathpix Markdown format.`;
 
     return NextResponse.json({
       rawMmd: mockMmd,
@@ -88,4 +58,3 @@ And a table:
     );
   }
 }
-
