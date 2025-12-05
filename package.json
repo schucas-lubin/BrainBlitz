@@ -20,6 +20,7 @@
     "autoprefixer": "^10.4.22",
     "eslint": "^9.39.1",
     "eslint-config-next": "^16.0.6",
+    "mathpix-markdown-it": "^2.0.27",
     "next": "^16.0.6",
     "openai": "^6.9.1",
     "postcss": "^8.5.6",

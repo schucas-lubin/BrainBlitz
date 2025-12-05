@@ -2,3 +2,324 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================================
+   Quiz Animations & Transitions
+   ============================================================================ */
+
+/* Fade in animation for cards and content */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Slide in from right for next question */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Pop animation for score reveal */
+@keyframes popIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Pulse animation for active elements */
+@keyframes subtlePulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Progress bar fill animation */
+@keyframes progressFill {
+  from {
+    width: 0%;
+  }
+}
+
+/* Shake animation for incorrect answers */
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-4px);
+  }
+  75% {
+    transform: translateX(4px);
+  }
+}
+
+/* Bounce animation for correct answers */
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+/* Staggered list animation */
+@keyframes staggerFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================================================================
+   Utility Classes
+   ============================================================================ */
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+.animate-fadeInScale {
+  animation: fadeInScale 0.25s ease-out forwards;
+}
+
+.animate-slideInRight {
+  animation: slideInRight 0.35s ease-out forwards;
+}
+
+.animate-popIn {
+  animation: popIn 0.4s ease-out forwards;
+}
+
+.animate-subtlePulse {
+  animation: subtlePulse 2s ease-in-out infinite;
+}
+
+.animate-shake {
+  animation: shake 0.3s ease-in-out;
+}
+
+.animate-bounce-subtle {
+  animation: bounce 0.4s ease-in-out;
+}
+
+/* Stagger animation delays for lists */
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.1s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.2s; }
+.stagger-5 { animation-delay: 0.25s; }
+
+/* Progress bar with smooth transition */
+.progress-bar {
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ============================================================================
+   Quiz Component Styles
+   ============================================================================ */
+
+/* Quiz card base */
+.quiz-card {
+  @apply bg-white rounded-xl shadow-md border border-gray-100;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.quiz-card:hover {
+  @apply shadow-lg;
+}
+
+/* Option button styles */
+.quiz-option {
+  @apply w-full text-left p-4 rounded-lg border-2 font-medium;
+  @apply transition-all duration-200 ease-out;
+}
+
+.quiz-option:not(:disabled):hover {
+  @apply border-indigo-300 bg-indigo-50;
+  transform: translateX(4px);
+}
+
+.quiz-option:focus {
+  @apply outline-none ring-2 ring-indigo-400 ring-offset-2;
+}
+
+.quiz-option.selected-correct {
+  @apply bg-emerald-50 border-emerald-400 text-emerald-800;
+}
+
+.quiz-option.selected-incorrect {
+  @apply bg-red-50 border-red-400 text-red-800;
+}
+
+.quiz-option.reveal-correct {
+  @apply bg-emerald-50 border-emerald-400;
+}
+
+/* Mode selector pills */
+.mode-pill {
+  @apply px-4 py-3 rounded-lg border-2 cursor-pointer;
+  @apply transition-all duration-200 ease-out;
+}
+
+.mode-pill:hover:not(.mode-pill-active) {
+  @apply border-gray-300 bg-gray-50;
+}
+
+.mode-pill-active {
+  @apply border-indigo-500 bg-indigo-50 text-indigo-700;
+}
+
+/* Question count pills */
+.count-pill {
+  @apply px-5 py-2.5 rounded-full font-semibold cursor-pointer;
+  @apply transition-all duration-200 ease-out;
+  @apply border-2 border-gray-200 bg-white text-gray-700;
+}
+
+.count-pill:hover:not(.count-pill-active) {
+  @apply border-gray-300 bg-gray-50;
+}
+
+.count-pill-active {
+  @apply border-indigo-500 bg-indigo-500 text-white;
+}
+
+/* Topic checkbox */
+.topic-checkbox {
+  @apply flex items-center gap-3 p-3 rounded-lg cursor-pointer;
+  @apply transition-all duration-150 ease-out;
+  @apply border border-transparent;
+}
+
+.topic-checkbox:hover {
+  @apply bg-gray-50 border-gray-200;
+}
+
+.topic-checkbox.topic-selected {
+  @apply bg-indigo-50 border-indigo-200;
+}
+
+/* Active recall toggle */
+.toggle-switch {
+  @apply relative inline-flex h-6 w-11 items-center rounded-full;
+  @apply transition-colors duration-200 ease-in-out;
+}
+
+.toggle-switch-enabled {
+  @apply bg-indigo-500;
+}
+
+.toggle-switch-disabled {
+  @apply bg-gray-200;
+}
+
+.toggle-switch-knob {
+  @apply inline-block h-4 w-4 transform rounded-full bg-white shadow-md;
+  @apply transition-transform duration-200 ease-in-out;
+}
+
+/* Mastery badge */
+.mastery-badge {
+  @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium;
+}
+
+/* Summary stat card */
+.stat-card {
+  @apply bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-6;
+  @apply border border-gray-200;
+}
+
+.stat-value {
+  @apply text-4xl font-bold;
+}
+
+.stat-label {
+  @apply text-sm text-gray-600 mt-1;
+}
+
+/* Loading skeleton */
+.skeleton {
+  @apply bg-gray-200 rounded animate-pulse;
+}
+
+/* ============================================================================
+   Custom Scrollbar
+   ============================================================================ */
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  @apply bg-gray-100 rounded;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 rounded;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400;
+}
+
+/* ============================================================================
+   Focus States for Accessibility
+   ============================================================================ */
+
+.focus-ring:focus {
+  @apply outline-none ring-2 ring-indigo-400 ring-offset-2;
+}
+
+.focus-visible-ring:focus-visible {
+  @apply outline-none ring-2 ring-indigo-400 ring-offset-2;
+}
+
+/* ============================================================================
+   Glass Effect (for modals and overlays)
+   ============================================================================ */
+
+.glass-overlay {
+  @apply bg-black/40 backdrop-blur-sm;
+}
+
+.glass-card {
+  @apply bg-white/90 backdrop-blur-md;
+}
