@@ -36,3 +36,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# Documentation and stuff I dont want to have on git
+1VirtualStickyNote.md 
+#this needs to be removed from git for gitignore to work

@@ -26,10 +26,11 @@ export type Database = {
           special_resources: Json | null
           streak_correct: number
           streak_incorrect: number
-          subtopic_id: string
+          subtopic_id: string | null
           topic_id: string
           updated_at: string
           user_notes_mmd: string | null
+          needs_research: boolean
         }
         Insert: {
           created_at?: string
@@ -42,10 +43,11 @@ export type Database = {
           special_resources?: Json | null
           streak_correct?: number
           streak_incorrect?: number
-          subtopic_id: string
+          subtopic_id?: string | null
           topic_id: string
           updated_at?: string
           user_notes_mmd?: string | null
+          needs_research?: boolean
         }
         Update: {
           created_at?: string
@@ -58,10 +60,11 @@ export type Database = {
           special_resources?: Json | null
           streak_correct?: number
           streak_incorrect?: number
-          subtopic_id?: string
+          subtopic_id?: string | null
           topic_id?: string
           updated_at?: string
           user_notes_mmd?: string | null
+          needs_research?: boolean
         }
         Relationships: [
           {
@@ -97,7 +100,7 @@ export type Database = {
           options: Json
           question_text: string
           session_id: string
-          subtopic_id: string
+          subtopic_id: string | null
           topic_id: string
           updated_at: string
         }
@@ -110,7 +113,7 @@ export type Database = {
           options: Json
           question_text: string
           session_id: string
-          subtopic_id: string
+          subtopic_id: string | null
           topic_id: string
           updated_at?: string
         }
@@ -123,7 +126,7 @@ export type Database = {
           options?: Json
           question_text?: string
           session_id?: string
-          subtopic_id?: string
+          subtopic_id?: string | null
           topic_id?: string
           updated_at?: string
         }
@@ -294,7 +297,7 @@ export type Database = {
           id: string
           order_index: number
           session_id: string
-          subtopic_id: string
+          subtopic_id: string | null
           topic_id: string
           updated_at: string
           word: string
@@ -306,7 +309,7 @@ export type Database = {
           id?: string
           order_index?: number
           session_id: string
-          subtopic_id: string
+          subtopic_id: string | null
           topic_id: string
           updated_at?: string
           word: string
@@ -318,7 +321,7 @@ export type Database = {
           id?: string
           order_index?: number
           session_id?: string
-          subtopic_id?: string
+          subtopic_id?: string | null
           topic_id?: string
           updated_at?: string
           word?: string

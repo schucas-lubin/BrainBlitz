@@ -107,18 +107,22 @@ Data assumptions:
 
 - `concepts`:
   - `id`: UUID.
-  - `subtopic_id`: FK → `subtopics.id` (nullable for orphan concepts).
-  - `topic_id`: FK → `topics.id` (optional; for orphans attaching directly to topics).
+  - `session_id`: FK → `sessions.id` (required).
+  - `topic_id`: FK → `topics.id` (required; always set).
+  - `subtopic_id`: FK → `subtopics.id` (nullable; null for orphan concepts that attach directly to topics).
   - `name`: text.
-  - `description`: text (markdown) – **AI-generated notes**.
+  - `generated_notes_mmd`: text (markdown) – **AI-generated notes** (written by Job 2).
+  - `user_notes_mmd`: text (markdown) – **User-edited notes** (separate from AI-generated, for user customizations).
   - `mastery_level`: enum (`"Cooked" | "Meh" | "There's Hope" | "Locked in"`).
   - `needs_research`: boolean (default `false`).
   - `order_index`: integer.
 
-**Important rule:**
+**Important rules:**
 
-- The **normal case** is Topic → Subtopic → Concept.
-- **Orphan concepts** are allowed only through controlled flows (AI or deliberate user action), to avoid creating subtopics for a single concept unnecessarily.
+- The **normal case** is Topic → Subtopic → Concept (all three levels present).
+- **Orphan concepts** are allowed but rare: concepts with `subtopic_id = NULL` attach directly to a topic. This should only be used when a concept doesn't fit cleanly under any subtopic and creating a single-concept subtopic would be unnecessary.
+- `topic_id` is always required (NOT NULL). `subtopic_id` can be NULL for orphan concepts.
+- Notes storage: AI-generated notes go in `generated_notes_mmd`. User edits go in `user_notes_mmd`. The UI should display/merge both appropriately.
 
 ### 3.3 Quiz Questions
 
@@ -126,11 +130,14 @@ Quiz questions are **concept-centric**:
 
 - `quiz_questions`:
   - `id`: UUID.
-  - `concept_id`: FK → `concepts.id`.
-  - `prompt`: text (markdown).
+  - `session_id`: FK → `sessions.id` (required; derived from concept when inserting).
+  - `topic_id`: FK → `topics.id` (required; derived from concept when inserting).
+  - `subtopic_id`: FK → `subtopics.id` (required; derived from concept when inserting, can be NULL if concept is orphan).
+  - `concept_id`: FK → `concepts.id` (required; primary relationship).
+  - `question_text`: text (markdown) – the question prompt.
   - `options`: JSONB array of strings.
-  - `correct_index`: integer (0-based index into `options`).
-  - `explanation`: text (markdown).
+  - `correct_option_index`: integer (0-based index into `options`).
+  - `explanation`: text (markdown, optional).
 
 For now, only **MCQs** are supported. Other question types can be added later by extending the schema (e.g. `type` field).
 
@@ -140,10 +147,13 @@ Word game entries (for the Wordle-style game) are also concept-centric:
 
 - `word_game_entries`:
   - `id`: UUID.
-  - `concept_id`: FK → `concepts.id`.
-  - `word`: text – the answer string.
+  - `session_id`: FK → `sessions.id` (required; derived from concept when inserting).
+  - `topic_id`: FK → `topics.id` (required; derived from concept when inserting).
+  - `subtopic_id`: FK → `subtopics.id` (required; derived from concept when inserting, can be NULL if concept is orphan).
+  - `concept_id`: FK → `concepts.id` (required; primary relationship).
+  - `word`: text – the answer string (length >= 4).
   - `clue`: text – short textual clue.
-  - (Optional) `order_index` or `difficulty` can be added later if needed.
+  - `order_index`: integer (required; values 10, 20, 30, or 40; max 4 entries per concept).
 
 These entries are derived from concept notes and/or general knowledge.
 
@@ -168,7 +178,7 @@ The AI layer will primarily expose **two main jobs** plus a few auxiliary regene
 2. **Job 2: SESSION_CONTENT_GENERATION**  
    - Input: `session_id` and scope options.  
    - Output: Per-concept notes, MCQs, and word-game entries.  
-   - Side effects: Writes notes to `concepts.description`, inserts `quiz_questions` and `word_game_entries` (overwriting existing content in the selected scope).
+   - Side effects: Writes notes to `concepts.generated_notes_mmd`, inserts `quiz_questions` and `word_game_entries` (overwriting existing content in the selected scope). When inserting quiz questions and word game entries, derives `session_id`, `topic_id`, and `subtopic_id` from the concept.
 
 3. **Auxiliary Jobs / Operations** (small scoped actions):
    - **Rewrite notes for a concept** (with modifiers like “add detail”, “more specific”, “add examples/analogies”).  
@@ -316,7 +326,7 @@ The internal JSON the LLM returns (before being mapped to DB rows) might look li
 Notes:
 
 - `order_index` is optional in the model output but useful. The server can also assign them (10, 20, 30, …) sequentially.
-- `orphan_concepts` attach directly to a topic (no subtopic). Server logic must map these to `concepts` with `topic_id` set and `subtopic_id` null.
+- `orphan_concepts` attach directly to a topic (no subtopic). Server logic must map these to `concepts` with `topic_id` set (required) and `subtopic_id` = NULL.
 
 ### 5.5 DB Write Behavior
 
@@ -338,8 +348,10 @@ For simplicity, the initial implementation can:
 
 For each concept row:
 
-- `description` may be empty initially (notes added in Job 2).
-- `needs_research` is set from the model’s flag.
+- `generated_notes_mmd` may be empty initially (notes added in Job 2).
+- `user_notes_mmd` remains NULL (user edits happen later, if at all).
+- `needs_research` is set from the model's flag.
+- For orphan concepts: `subtopic_id` is set to NULL, `topic_id` is set to the parent topic's ID.
 
 ### 5.6 UI Integration – Stage 1 Stop Point
 
@@ -396,9 +408,9 @@ Derived inputs (server fetches from DB):
 - `session.subject`, `session.title`.
 - **Relevant concepts** for the chosen scope:
   - For each concept:
-    - `id`, `name`, `subtopic_id`, `topic_id`,
+    - `id`, `name`, `session_id`, `topic_id`, `subtopic_id` (may be NULL for orphans),
     - `needs_research`,
-    - Maybe any existing notes (if doing partial regeneration).
+    - Maybe any existing `generated_notes_mmd` (if doing partial regeneration).
 
 ### 6.3 Content Strategy
 
@@ -429,32 +441,33 @@ For a batch of concepts, the model might return something like:
       "notes_markdown": "### Hydrohalogenation of Alkenes\n\nHydrohalogenation is the addition of HX (HCl, HBr, HI) to an alkene...",
       "quiz_questions": [
         {
-          "prompt": "In the hydrohalogenation of an unsymmetrical alkene with HBr, the major product typically follows:",
+          "question_text": "In the hydrohalogenation of an unsymmetrical alkene with HBr, the major product typically follows:",
           "options": [
             "Zaitsev's rule",
             "Markovnikov's rule",
             "Anti-Markovnikov's rule",
             "Hofmann's rule"
           ],
-          "correct_index": 1,
+          "correct_option_index": 1,
           "explanation": "Hydrohalogenation follows Markovnikov's rule: the proton adds to the carbon with more hydrogens..."
         },
         {
-          "prompt": "Which of the following factors most strongly affects the rate of hydrohalogenation of an alkene?",
+          "question_text": "Which of the following factors most strongly affects the rate of hydrohalogenation of an alkene?",
           "options": [
             "Nucleophile concentration",
             "Carbocation stability",
             "Solvent polarity",
             "Presence of light"
           ],
-          "correct_index": 1,
+          "correct_option_index": 1,
           "explanation": "The reaction proceeds through a carbocation intermediate; more stable carbocations form faster..."
         }
       ],
       "word_game_entries": [
         {
           "word": "MARKOVNIKOV",
-          "clue": "Last name of the chemist whose rule predicts the regiochemistry of many hydrohalogenation reactions."
+          "clue": "Last name of the chemist whose rule predicts the regiochemistry of many hydrohalogenation reactions.",
+          "order_index": 10
         }
       ]
     }
@@ -465,9 +478,9 @@ For a batch of concepts, the model might return something like:
 The server is responsible for:
 
 - Validating this JSON against a local schema.
-- Writing `notes_markdown` to `concepts.description`.
-- Inserting `quiz_questions` rows linked to `concept_id`.
-- Inserting `word_game_entries` rows linked to `concept_id`.
+- Writing `notes_markdown` to `concepts.generated_notes_mmd` (not `user_notes_mmd`).
+- Inserting `quiz_questions` rows: for each question, derive `session_id`, `topic_id`, and `subtopic_id` from the concept before inserting.
+- Inserting `word_game_entries` rows: for each entry, derive `session_id`, `topic_id`, and `subtopic_id` from the concept before inserting. Ensure `order_index` values are 10, 20, 30, or 40 (max 4 entries per concept).
 
 ### 6.5 DB Write Behavior
 
@@ -478,8 +491,8 @@ Given a scope (session/subtopic/concept) and overwrite mode `"replace"`:
    - Delete existing quiz questions for that concept.
    - Delete existing word-game entries for that concept.
    - Optionally (and typically) replace the notes field for that concept.
-3. Insert newly generated quiz questions and word-game entries.
-4. Update notes field (`concepts.description`) for each concept.
+3. Insert newly generated quiz questions (with derived `session_id`, `topic_id`, `subtopic_id`) and word-game entries (with derived `session_id`, `topic_id`, `subtopic_id`, and valid `order_index` values).
+4. Update notes field (`concepts.generated_notes_mmd`) for each concept.
 
 The **scope overwrite** is guarded by user confirmation in the UI:
 
@@ -543,10 +556,10 @@ Request body:
 
 Server tasks:
 
-1. Fetch concept (name, existing description, `needs_research`, session context).
+1. Fetch concept (name, existing `generated_notes_mmd`, `needs_research`, session context).
 2. Build a prompt instructing the model to **rewrite the notes** respecting the chosen modifiers.
 3. Call LLM with the prompt.
-4. Overwrite `concepts.description` with the new markdown.
+4. Overwrite `concepts.generated_notes_mmd` with the new markdown (does not affect `user_notes_mmd`).
 
 No quiz questions or word-game entries are changed by this operation.
 
@@ -579,14 +592,14 @@ Request body:
 
 Server tasks:
 
-1. Fetch the original question (prompt, options, correct_index, explanation) and associated `concept_id`.
-2. Fetch concept (name, notes) and subtopic/topic context if helpful.
+1. Fetch the original question (`question_text`, `options`, `correct_option_index`, `explanation`) and associated `concept_id`, `session_id`, `topic_id`, `subtopic_id`.
+2. Fetch concept (name, `generated_notes_mmd`) and subtopic/topic context if helpful.
 3. Build a prompt that:
    - Explains the concept again,
    - Provides the original question + options + explanation,
-   - Provides the user’s reason (if any),
+   - Provides the user's reason (if any),
    - Asks the model to generate a **new MCQ** for the same concept that is better.
-4. Replace the old question in DB with the new one (keeping the same `id` or creating a new row and deleting the old, depending on implementation).
+4. Replace the old question in DB with the new one (keeping the same `id` or creating a new row and deleting the old, depending on implementation). Ensure `session_id`, `topic_id`, and `subtopic_id` are preserved.
 5. The flagged question should **not count** toward mastery for that quiz attempt (handled by the quiz logic, not the AI job).
 
 ---
